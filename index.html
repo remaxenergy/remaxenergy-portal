@@ -231,8 +231,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 /* FOOTER */
 .client-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
 .client-footer-logo{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-.client-footer-logo img{height:28px;width:auto;}
-.client-footer-logo-text{font-size:10px;color:var(--muted);text-align:right;}
+.client-footer-logo img{height:40px;width:auto;}
+.client-footer-logo-text{font-size:11px;color:var(--muted);text-align:right;font-weight:500;}
 .client-body{padding:20px;max-width:1040px;margin:0 auto;padding-top:24px;}
 .client-progress-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:16px;}
 .client-progress-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
@@ -256,14 +256,13 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .client-info-val.deadline-green{color:var(--success);}
 .client-deadline-row{padding:6px 8px;border-radius:6px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .client-deadline-row:last-child{margin-bottom:0;}
-.client-deadline-row.dl-green{background:rgba(26,122,74,.07);}
+.client-deadline-row.dl-green{background:rgba(26,122,74,.12);}
 .client-deadline-val.dv-neutral{color:var(--mid);font-weight:400;}
 .client-deadline-row.dl-orange{background:rgba(180,83,9,.07);}
 .client-deadline-row.dl-red{background:rgba(170,17,32,.07);}
 .client-deadline-row.dl-past{opacity:.6;}
 .client-deadline-key{font-size:11px;color:var(--muted);flex:1;}
 .client-deadline-val{font-size:12px;font-weight:600;text-align:right;flex-shrink:0;}
-.client-deadline-val.dv-green{color:var(--mid);font-weight:500;}
 .client-deadline-val.dv-orange{color:var(--warning);font-weight:600;}
 .client-deadline-val.dv-red{color:var(--red-dark);font-weight:700;}
 .client-deadline-val.dv-past{color:var(--muted);font-weight:400;}
@@ -340,6 +339,38 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
   </div>
 </div>
 
+<!-- EDIT TRANSACTION INFO MODAL -->
+<div class="modal-overlay" id="modal-edit-txn">
+  <div class="modal">
+    <div class="modal-title">Edit transaction info</div>
+    <div class="modal-sub">Update the basics for this transaction.</div>
+    <div class="form-group"><label class="form-label">Client name(s)</label><input class="form-input" type="text" id="edit-txn-client" placeholder="e.g. Sarah & Tom Weston"></div>
+    <div class="form-group"><label class="form-label">Property address</label><input class="form-input" type="text" id="edit-txn-address" placeholder="e.g. 1428 Elmhurst Dr"></div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" type="text" id="edit-txn-city" placeholder="Edmond"></div>
+      <div class="form-group"><label class="form-label">State</label><input class="form-input" type="text" id="edit-txn-state" placeholder="OK" maxlength="2"></div>
+      <div class="form-group"><label class="form-label">ZIP</label><input class="form-input" type="text" id="edit-txn-zip" placeholder="73003" maxlength="10"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Closing date</label><input class="form-input" type="date" id="edit-txn-closing"></div>
+      <div class="form-group"><label class="form-label">Closing time</label><input class="form-input" type="time" id="edit-txn-closing-time"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Transaction type</label>
+      <div class="type-row">
+        <button class="type-btn" onclick="selectEditType('buyer')" id="edit-type-buyer">Buyer</button>
+        <button class="type-btn" onclick="selectEditType('seller')" id="edit-type-seller">Seller</button>
+        <button class="type-btn" onclick="selectEditType('dual')" id="edit-type-dual">Both sides</button>
+      </div>
+    </div>
+    <div class="login-error" id="edit-txn-error" style="margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-txn')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditTxnInfo()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- HOW-TO MODAL -->
 <div class="modal-overlay" id="howto-modal">
   <div class="modal" style="max-width:480px;">
@@ -409,11 +440,14 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
   <div class="main">
     <button class="detail-back" onclick="backToDash()">← Back</button>
     <div class="detail-header">
-      <div class="detail-client" id="detail-client"></div>
-      <div class="detail-address-row">
-        <span class="txn-badge" id="detail-badge"></span>
-        <span class="detail-address" id="detail-address"></span>
+      <div style="flex:1;">
+        <div class="detail-client" id="detail-client"></div>
+        <div class="detail-address-row">
+          <span class="txn-badge" id="detail-badge"></span>
+          <span class="detail-address" id="detail-address"></span>
+        </div>
       </div>
+      <button class="btn btn-outline btn-sm" id="edit-txn-info-btn" onclick="openEditTxnInfo()" style="flex-shrink:0;">Edit info</button>
     </div>
     <div style="height:4px;"></div>
     <div class="detail-3col">
@@ -461,16 +495,19 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
       <!-- MIDDLE: Client Link + FUB + DotLoop + Progress + Steps + Message -->
       <div>
         <div class="card">
-          <div class="card-label">Client link</div>
-          <div class="link-box"><span class="link-text" id="detail-link"></span><button class="copy-btn" onclick="copyLink()">Copy</button></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:8px;">Share with your client. No login needed.</div>
-        </div>
-        <div class="card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div class="card-label" style="margin-bottom:0;">External links</div>
+            <div class="card-label" style="margin-bottom:0;">Links</div>
             <button class="copy-btn" onclick="openEditLinks()">Edit</button>
           </div>
+          <!-- Client link compact row -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+            <span style="font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;">Client link</span>
+            <span class="link-text" id="detail-link" style="flex:1;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            <button class="copy-btn" onclick="copyLink()" style="flex-shrink:0;">Copy</button>
+          </div>
+          <!-- External links row -->
           <div class="ext-link-row" id="ext-links-row"></div>
+          <!-- Edit form -->
           <div id="edit-links-form" style="display:none;margin-top:12px;">
             <label class="form-label" style="font-size:11px;">DotLoop link</label>
             <input class="sidebar-input" type="url" id="edit-dotloop" placeholder="https://dotloop.com/..." style="margin-bottom:8px;margin-top:2px;">
@@ -617,12 +654,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
       <div id="client-right-col"></div>
     </div>
     <!-- FOOTER: disclaimer left, logo bottom right -->
-    <div class="client-footer">
-      <div class="disclaimer" style="border-top:none;margin-top:0;padding-top:0;text-align:left;max-width:80%;">This progress tracker is provided for informational purposes only and does not constitute legal advice, a guarantee of accuracy, or a binding representation of any transaction terms or deadlines. All dates, deadlines, and transaction details must be independently verified with your agent and the executed contract documents. RE/MAX Energy Real Estate and its agents are not liable for any errors, omissions, or reliance on information displayed here.</div>
-      <div class="client-footer-logo">
-        <img id="client-logo-img" src="" alt="RE/MAX Energy Real Estate">
-        <div class="client-footer-logo-text">RE/MAX Energy Real Estate</div>
-      </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <div class="disclaimer" style="border-top:none;margin-top:0;padding-top:0;text-align:left;">This progress tracker is provided for informational purposes only and does not constitute legal advice, a guarantee of accuracy, or a binding representation of any transaction terms or deadlines. All dates, deadlines, and transaction details must be independently verified with your agent and the executed contract documents. RE/MAX Energy Real Estate and its agents are not liable for any errors, omissions, or reliance on information displayed here.</div>
     </div>
   </div>
 </div>
@@ -724,7 +757,7 @@ const AGENTS=["Tyler Woodward"];
 let currentUser=null,currentTxnId=null,newTxnType="buyer",liveTransactions=[],unsubscribe=null,setupContext=null,agentProfiles={},editingAgentName=null;
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
 
-function setLogos(){["login-logo-img","setup-logo-img","nav-logo-agent","nav-logo-detail","nav-logo-admin","client-logo-img"].forEach(id=>{const el=document.getElementById(id);if(el)el.src="data:image/png;base64,"+LOGO_B64;});}
+function setLogos(){["login-logo-img","setup-logo-img","nav-logo-agent","nav-logo-detail","nav-logo-admin"].forEach(id=>{const el=document.getElementById(id);if(el)el.src="data:image/png;base64,"+LOGO_B64;});}
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");}
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500);}
 function ini(name){return name.split(" ").map(w=>w[0]).join("").slice(0,2);}
@@ -1166,6 +1199,48 @@ window.saveStepNote=async function(side,i){
   }catch(e){showToast("Error saving note");}
 };
 window.toggleStep=async function(side,i){const t=liveTransactions.find(x=>x.id===currentTxnId);if(!t)return;const key=side+"Steps";const steps=[...(t[key]||[])];steps[i]={...steps[i],done:!steps[i].done,date:!steps[i].done?new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}):""}; try{await updateDoc(doc(db,"transactions",currentTxnId),{[key]:steps});}catch(e){showToast("Error saving");}};
+let editTxnType="buyer";
+window.openEditTxnInfo=function(){
+  const t=liveTransactions.find(x=>x.id===currentTxnId);if(!t)return;
+  // Parse address back into parts (stored as "street, city, state, zip")
+  const parts=t.address.split(", ");
+  document.getElementById("edit-txn-client").value=t.client||"";
+  document.getElementById("edit-txn-address").value=parts[0]||"";
+  document.getElementById("edit-txn-city").value=parts[1]||"";
+  document.getElementById("edit-txn-state").value=parts[2]||"";
+  document.getElementById("edit-txn-zip").value=parts[3]||"";
+  document.getElementById("edit-txn-closing").value=t.closing||"";
+  document.getElementById("edit-txn-closing-time").value=t.sidebarData?.closingTime||"";
+  editTxnType=t.type||"buyer";
+  ["buyer","seller","dual"].forEach(tp=>document.getElementById("edit-type-"+tp).classList.toggle("selected",tp===editTxnType));
+  document.getElementById("edit-txn-error").style.display="none";
+  document.getElementById("modal-edit-txn").classList.add("open");
+};
+window.selectEditType=function(tp){editTxnType=tp;["buyer","seller","dual"].forEach(x=>document.getElementById("edit-type-"+x).classList.toggle("selected",x===tp));};
+window.saveEditTxnInfo=async function(){
+  const client=document.getElementById("edit-txn-client").value.trim();
+  const street=document.getElementById("edit-txn-address").value.trim();
+  const city=document.getElementById("edit-txn-city").value.trim();
+  const state=document.getElementById("edit-txn-state").value.trim();
+  const zip=document.getElementById("edit-txn-zip").value.trim();
+  const closing=document.getElementById("edit-txn-closing").value;
+  const closingTime=document.getElementById("edit-txn-closing-time").value;
+  const err=document.getElementById("edit-txn-error");
+  if(!client||!street||!closing){err.textContent="Client name, address, and closing date are required.";err.style.display="block";return;}
+  const address=[street,city,state,zip].filter(Boolean).join(", ");
+  try{
+    const t=liveTransactions.find(x=>x.id===currentTxnId);
+    const sd={...(t.sidebarData||{}),closingTime};
+    await updateDoc(doc(db,"transactions",currentTxnId),{client,address,closing,type:editTxnType,sidebarData:sd});
+    closeModal("modal-edit-txn");
+    showToast("Transaction updated");
+    // Refresh header
+    document.getElementById("detail-client").textContent=client;
+    document.getElementById("detail-address").textContent=address;
+    updateClosingDisplay();
+  }catch(e){err.textContent="Error saving.";err.style.display="block";}
+};
+
 window.saveLoanType=async function(){
   const lt=document.getElementById("sb-loan-type").value;
   try{
@@ -1319,6 +1394,8 @@ let rightHtml="";
 if(dlRows)rightHtml+=`<div class="client-info-card"><div class="client-info-label">Contract deadlines</div>${dlRows}</div>`;
 if(sd.contingencies)rightHtml+=`<div class="client-info-card" style="margin-top:12px;"><div class="client-info-label">Notes</div><div style="font-size:13px;line-height:1.6;color:var(--mid);">${sd.contingencies}</div></div>`;
 rightHtml+=closingBox;
+// Logo under closing date box
+rightHtml+=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:12px;"><img src="data:image/png;base64,${LOGO_B64}" style="height:40px;width:auto;"><div style="font-size:10px;color:var(--muted);font-weight:500;text-align:right;">RE/MAX Energy Real Estate</div></div>`;
 document.getElementById("client-right-col").innerHTML=rightHtml;
 
 setLogos();show("screen-client");}catch(e){document.body.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#888;">Error loading transaction.</div>`;}}
