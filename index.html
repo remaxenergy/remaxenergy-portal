@@ -81,15 +81,18 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .txn-client{font-size:15px;font-weight:600;}
 .txn-address{font-size:13px;color:var(--muted);margin-top:2px;}
 .txn-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;flex-shrink:0;}
-.badge-buyer{background:#ddeef9;color:var(--blue-dark);}
+.badge-buyer{background:#ddeef9;color:var(--blue-dark);} .client-badge.badge-buyer{background:#ddeef9;color:var(--blue-dark);}
 .badge-seller{background:#fef3c7;color:#92400e;}
 .badge-dual{background:#f3e8ff;color:#6b21a8;}
 .txn-progress-wrap{background:var(--bg);border-radius:99px;height:5px;margin-bottom:6px;overflow:hidden;}
 .txn-progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--red-dark),var(--red));}
 .txn-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
-.detail-3col{display:grid;grid-template-columns:260px 1fr 300px;gap:14px;align-items:start;}
+.detail-3col{display:grid;grid-template-columns:260px 1fr 300px;gap:14px;align-items:start;margin-left:8px;}
 @media(max-width:860px){.detail-3col{grid-template-columns:1fr;}}
 @media(max-width:600px){
+  .client-top-card{flex-direction:column;gap:10px;}
+  .client-footer{flex-direction:column;align-items:flex-start;}
+  .client-footer-logo{align-items:flex-start;}
   .main{padding:12px;}
   .detail-3col{grid-template-columns:1fr;gap:10px;}
   .client-3col{grid-template-columns:1fr;gap:10px;}
@@ -213,22 +216,24 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .admin-txn-client{font-size:14px;font-weight:500;}
 .admin-txn-meta{font-size:12px;color:var(--muted);margin-top:2px;}
 .admin-txn-pct{font-family:"DM Mono",monospace;font-size:13px;color:var(--muted);}
-#screen-client{background:var(--white);}
-.client-header{background:var(--dark);padding:20px;}
-.client-header-top{display:flex;align-items:center;margin-bottom:16px;}
-.client-logo{display:flex;align-items:center;gap:8px;}
-.client-logo img{height:30px;width:auto;background:white;padding:5px 8px;border-radius:6px;}
-.client-logo-text{font-size:13px;font-weight:500;color:white;}
-.client-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.client-property{font-size:20px;font-weight:600;color:white;margin-bottom:6px;}
+#screen-client{background:var(--bg);}
+/* TOP CARD — property info */
+.client-top-card{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.client-top-left{flex:1;min-width:0;}
+.client-property{font-size:20px;font-weight:600;color:var(--dark);margin-bottom:2px;}
 .client-address-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.client-address-text{font-size:15px;color:rgba(255,255,255,.75);}
-.client-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.9);}
-.client-closing-pill{background:rgba(255,255,255,.12);border-radius:var(--radius);padding:10px 14px;text-align:center;flex-shrink:0;}
-.client-closing-pill-label{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.client-address-text{font-size:14px;color:var(--muted);}
+.client-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;}
+.client-closing-pill{background:var(--dark);border-radius:var(--radius);padding:10px 16px;text-align:center;flex-shrink:0;}
+.client-closing-pill-label{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
 .client-closing-pill-date{font-size:15px;font-weight:600;color:white;}
-.client-closing-pill-time{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;}
-.client-body{padding:20px;max-width:1040px;margin:0 auto;}
+.client-closing-pill-time{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;}
+/* FOOTER */
+.client-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.client-footer-logo{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.client-footer-logo img{height:28px;width:auto;}
+.client-footer-logo-text{font-size:10px;color:var(--muted);text-align:right;}
+.client-body{padding:20px;max-width:1040px;margin:0 auto;padding-top:24px;}
 .client-progress-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:16px;}
 .client-progress-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
 .client-progress-bar{background:var(--border);border-radius:99px;height:8px;margin-bottom:6px;overflow:hidden;}
@@ -268,11 +273,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .client-closing-big-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
 .client-closing-big-date{font-size:22px;font-weight:600;color:white;}
 .client-closing-big-time{font-size:13px;color:rgba(255,255,255,.6);margin-top:2px;}
-.client-agent-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;}
-.client-agent-header{background:var(--red);color:white;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:6px 14px;}
-.client-agent-body{display:flex;align-items:flex-start;gap:12px;padding:14px;}
-.client-agent-info{flex:1;min-width:0;}
-.client-agent-avatar{width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:white;overflow:hidden;flex-shrink:0;}
+.client-agent-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:12px;}
+.client-agent-avatar{width:44px;height:44px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:white;overflow:hidden;flex-shrink:0;float:right;margin-left:10px;margin-bottom:4px;}
 
 .client-agent-avatar img{width:100%;height:100%;object-fit:cover;}
 .client-agent-name{font-size:15px;font-weight:600;margin-bottom:4px;}
@@ -413,6 +415,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
         <span class="detail-address" id="detail-address"></span>
       </div>
     </div>
+    <div style="height:4px;"></div>
     <div class="detail-3col">
       <!-- LEFT: Agent + Title + Lender + Notes + Source -->
       <div>
@@ -581,12 +584,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 </div>
 
 <div id="screen-client" class="screen">
-  <div class="client-header">
-    <div class="client-header-top"><div class="client-logo"><img id="client-logo-img" src="" alt="RE/MAX Energy"><span class="client-logo-text">RE/MAX Energy Real Estate</span></div></div>
-    <div class="client-hero">
-      <div>
+  <div class="client-body">
+    <!-- TOP: property info card spans full width above columns -->
+    <div class="client-top-card">
+      <div class="client-top-left">
         <div class="client-property" id="client-property"></div>
-        <div class="client-address-row">
+        <div class="client-address-row" style="margin-top:6px;">
           <span class="client-badge" id="client-badge"></span>
           <span class="client-address-text" id="client-address"></span>
         </div>
@@ -597,8 +600,6 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
         <div class="client-closing-pill-time" id="client-closing-time"></div>
       </div>
     </div>
-  </div>
-  <div class="client-body">
     <div class="client-progress-card">
       <div class="client-progress-label">Overall progress</div>
       <div class="client-progress-bar"><div class="client-progress-fill" id="client-progress-fill"></div></div>
@@ -615,7 +616,14 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
       </div>
       <div id="client-right-col"></div>
     </div>
-    <div class="disclaimer">This progress tracker is provided for informational purposes only and does not constitute legal advice, a guarantee of accuracy, or a binding representation of any transaction terms or deadlines. All dates, deadlines, and transaction details must be independently verified with your agent and the executed contract documents. RE/MAX Energy Real Estate and its agents are not liable for any errors, omissions, or reliance on information displayed here. Your agent remains your primary point of contact for all transaction details.</div>
+    <!-- FOOTER: disclaimer left, logo bottom right -->
+    <div class="client-footer">
+      <div class="disclaimer" style="border-top:none;margin-top:0;padding-top:0;text-align:left;max-width:80%;">This progress tracker is provided for informational purposes only and does not constitute legal advice, a guarantee of accuracy, or a binding representation of any transaction terms or deadlines. All dates, deadlines, and transaction details must be independently verified with your agent and the executed contract documents. RE/MAX Energy Real Estate and its agents are not liable for any errors, omissions, or reliance on information displayed here.</div>
+      <div class="client-footer-logo">
+        <img id="client-logo-img" src="" alt="RE/MAX Energy Real Estate">
+        <div class="client-footer-logo-text">RE/MAX Energy Real Estate</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -780,7 +788,7 @@ function getSteps(t){if(t.type==="buyer")return t.buyerSteps||[];if(t.type==="se
 function daysUntil(ds){if(!ds)return null;const d=new Date(ds+"T12:00:00");d.setHours(0,0,0,0);return Math.round((d-TODAY)/(1000*60*60*24));}
 function countdownTag(ds){if(!ds)return"";const diff=daysUntil(ds);if(diff===null)return"";if(diff<0)return'<span class="countdown-tag countdown-green">Done</span>';if(diff===0)return'<span class="countdown-tag countdown-orange">Due today</span>';if(diff<=7)return`<span class="countdown-tag countdown-orange">${diff}d away</span>`;return"";}
 function dlClass(ds){if(!ds)return"";const diff=daysUntil(ds);if(diff===null)return"";if(diff<0)return"dl-green";if(diff===0||diff<=7)return"dl-orange";return"";}
-function dvClass(ds){if(!ds)return"dv-past";const diff=daysUntil(ds);if(diff===null)return"dv-past";if(diff<0)return"dv-red";if(diff===0||diff<=7)return"dv-orange";if(diff>0)return"dv-green";return"dv-past";}
+function dvClass(ds){if(!ds)return"dv-past";const diff=daysUntil(ds);if(diff===null)return"dv-past";if(diff<0)return"dv-green";if(diff===0||diff<=7)return"dv-orange";return"dv-neutral";}
 function countdownStr(ds){if(!ds)return"";const diff=daysUntil(ds);if(diff===null)return"";if(diff<0)return"Done";if(diff===0)return"Due today";if(diff<=7)return`${diff} day${diff===1?"":"s"} away`;return"";}
 
 async function loadProfiles(){const s=await getDocs(collection(db,"agents"));s.docs.forEach(d=>{agentProfiles[d.id]=d.data();});}
@@ -929,11 +937,14 @@ updateLoanTypeNote(t.loanType||"conventional");
 updateClosingDisplay();
 recalcDates();
 // Color sidebar dates after all values are populated
-setTimeout(updateSidebarDateColors, 50);
+setTimeout(updateSidebarDateColors, 200);
 if(!agentProfiles[t.agent]||!agentProfiles[t.agent].pin){try{const pd=await getDoc(doc(db,"agents",t.agent));if(pd.exists())agentProfiles[t.agent]=pd.data();}catch(e){}}
 renderDetailAgentProfile(t.agent);
 renderDetailSteps(t);
-show("screen-detail");};
+show("screen-detail");
+// Final color pass after everything is painted
+setTimeout(updateSidebarDateColors,300);
+};
 
 function updateClosingDisplay(){const d=document.getElementById("sb-closing").value;const ti=document.getElementById("sb-closing-time").value;const el=document.getElementById("sb-closing-display");if(d){el.innerHTML=`<div class="closing-box-date">${fmtDate(d)}</div>${ti?`<div class="closing-box-time">${fmtTime(ti)}</div>`:""}`;} else{el.innerHTML=`<div style="font-size:13px;color:var(--muted);">No closing date set</div>`;}}
 
@@ -1008,7 +1019,7 @@ window.recalcDates=function(){
 
   // Color-code sidebar date sections based on date status
   // Small timeout ensures DOM has updated field values before checking colors
-  setTimeout(updateSidebarDateColors, 0);
+  setTimeout(updateSidebarDateColors, 100);
 };
 
 function updateSidebarDateColors(){
@@ -1257,16 +1268,12 @@ if(ap.video){
 
 // 2. AGENT BOX with "Your Agent" tag
 leftHtml+=`<div class="client-agent-block">
-  <div class="client-agent-header">Your Agent</div>
-  <div class="client-agent-body">
-    <div class="client-agent-info">
-      <div class="client-agent-name">${t.agent}</div>
-      <div class="client-agent-contact">
-        ${ap.phone?`<a href="tel:${ap.phone}" class="contact-link">${ap.phone}</a>`:""}
-        ${ap.email?`<a href="mailto:${ap.email}" class="contact-link">${ap.email}</a>`:""}
-      </div>
-    </div>
-    <div class="client-agent-avatar">${avHtml}</div>
+  <div class="client-info-label">Your Agent</div>
+  <div class="client-agent-avatar">${avHtml}</div>
+  <div class="client-agent-name">${t.agent}</div>
+  <div class="client-agent-contact">
+    ${ap.phone?`<a href="tel:${ap.phone}" class="contact-link">${ap.phone}</a>`:""}
+    ${ap.email?`<a href="mailto:${ap.email}" class="contact-link">${ap.email}</a>`:""}
   </div>
 </div>`;
 
