@@ -268,8 +268,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .client-closing-big-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
 .client-closing-big-date{font-size:22px;font-weight:600;color:white;}
 .client-closing-big-time{font-size:13px;color:rgba(255,255,255,.6);margin-top:2px;}
-.client-agent-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:12px;}
-.client-agent-avatar{width:52px;height:52px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:white;overflow:hidden;margin-bottom:10px;}
+.client-agent-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;}
+.client-agent-header{background:var(--red);color:white;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:6px 14px;}
+.client-agent-body{display:flex;align-items:flex-start;gap:12px;padding:14px;}
+.client-agent-info{flex:1;min-width:0;}
+.client-agent-avatar{width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:white;overflow:hidden;flex-shrink:0;}
+
 .client-agent-avatar img{width:100%;height:100%;object-fit:cover;}
 .client-agent-name{font-size:15px;font-weight:600;margin-bottom:4px;}
 .client-agent-contact a{display:block;font-size:12px;color:var(--red);text-decoration:none;margin-bottom:2px;}
@@ -924,6 +928,8 @@ if(loanTypeEl)loanTypeEl.value=t.loanType||"conventional";
 updateLoanTypeNote(t.loanType||"conventional");
 updateClosingDisplay();
 recalcDates();
+// Color sidebar dates after all values are populated
+setTimeout(updateSidebarDateColors, 50);
 if(!agentProfiles[t.agent]||!agentProfiles[t.agent].pin){try{const pd=await getDoc(doc(db,"agents",t.agent));if(pd.exists())agentProfiles[t.agent]=pd.data();}catch(e){}}
 renderDetailAgentProfile(t.agent);
 renderDetailSteps(t);
@@ -1001,7 +1007,8 @@ window.recalcDates=function(){
   });
 
   // Color-code sidebar date sections based on date status
-  updateSidebarDateColors();
+  // Small timeout ensures DOM has updated field values before checking colors
+  setTimeout(updateSidebarDateColors, 0);
 };
 
 function updateSidebarDateColors(){
@@ -1045,7 +1052,58 @@ const sd={closingTime:document.getElementById("sb-closing-time").value,acceptanc
 const closing=document.getElementById("sb-closing").value;
 try{await updateDoc(doc(db,"transactions",currentTxnId),{closing,sidebarData:sd});showToast("Saved");updateSidebarDateColors();}catch(e){showToast("Error saving");}};
 
-function renderDetailSteps(t){const all=getSteps(t);const done=all.filter(s=>s.done).length;const pct=all.length?Math.round(done/all.length*100):0;document.getElementById("detail-progress-label").textContent=done+" of "+all.length+" — "+pct+"%";document.getElementById("detail-progress-bar").style.width=pct+"%";const container=document.getElementById("detail-steps");const isAdmin=currentUser&&currentUser.isAdmin;const firstUndone=all.findIndex(s=>!s.done);let html="";if(t.type==="dual"){const buyerFirst=t.buyerSteps?t.buyerSteps.findIndex(s=>!s.done):-1;const sellerFirst=t.sellerSteps?t.sellerSteps.findIndex(s=>!s.done):-1;html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;">Buyer side</div>`;html+=(t.buyerSteps||[]).map((s,i)=>stepHTML(s,i,"buyer",isAdmin,i===buyerFirst)).join("");html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 0 4px;">Seller side</div>`;html+=(t.sellerSteps||[]).map((s,i)=>stepHTML(s,i,"seller",isAdmin,i===sellerFirst)).join("");}else{const key=t.type+"Steps";const stepList=t[key]||[];const firstU=stepList.findIndex(s=>!s.done);html+=stepList.map((s,i)=>stepHTML(s,i,t.type,isAdmin,i===firstU)).join("");}container.innerHTML=html;}
+function stepsWithToggle(stepList,side,isAdmin){
+  const doneSteps=stepList.filter(s=>s.done);
+  const undoneSteps=stepList.filter(s=>!s.done);
+  const firstUndone=stepList.findIndex(s=>!s.done);
+  let html="";
+  // Completed steps — collapsible at top
+  if(doneSteps.length>0){
+    html+=`<div class="steps-done-header" onclick="toggleDoneSteps('${side}')" style="display:flex;align-items:center;gap:6px;padding:6px 0;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);margin-bottom:4px;">
+      <span id="done-arrow-${side}" style="font-size:10px;color:var(--muted);transition:transform .2s;">▼</span>
+      <span style="font-size:11px;font-weight:600;color:var(--success);">${doneSteps.length} completed</span>
+    </div>
+    <div id="done-steps-${side}" style="overflow:hidden;max-height:0;transition:max-height .3s ease;">`;
+    stepList.forEach((s,i)=>{if(s.done)html+=stepHTML(s,i,side,isAdmin,false);});
+    html+=`</div>`;
+  }
+  // Incomplete steps
+  undoneSteps.forEach(s=>{
+    const i=stepList.indexOf(s);
+    html+=stepHTML(s,i,side,isAdmin,i===firstUndone);
+  });
+  return html;
+}
+
+window.toggleDoneSteps=function(side){
+  const container=document.getElementById(`done-steps-${side}`);
+  const arrow=document.getElementById(`done-arrow-${side}`);
+  if(!container)return;
+  const isOpen=container.style.maxHeight!=="0px"&&container.style.maxHeight!=="";
+  container.style.maxHeight=isOpen?"0px":`${container.scrollHeight}px`;
+  if(arrow)arrow.style.transform=isOpen?"":"rotate(-90deg)";
+};
+
+function renderDetailSteps(t){
+  const all=getSteps(t);
+  const done=all.filter(s=>s.done).length;
+  const pct=all.length?Math.round(done/all.length*100):0;
+  document.getElementById("detail-progress-label").textContent=done+" of "+all.length+" — "+pct+"%";
+  document.getElementById("detail-progress-bar").style.width=pct+"%";
+  const container=document.getElementById("detail-steps");
+  const isAdmin=currentUser&&currentUser.isAdmin;
+  let html="";
+  if(t.type==="dual"){
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;">Buyer side</div>`;
+    html+=stepsWithToggle(t.buyerSteps||[],"buyer",isAdmin);
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 0 4px;">Seller side</div>`;
+    html+=stepsWithToggle(t.sellerSteps||[],"seller",isAdmin);
+  } else {
+    const key=t.type+"Steps";
+    html+=stepsWithToggle(t[key]||[],t.type,isAdmin);
+  }
+  container.innerHTML=html;
+}
 
 function stepHTML(s,i,side,isAdmin,isCurrent){
   const cbClass=s.done?"checked":isCurrent?"current":"";
@@ -1198,7 +1256,19 @@ if(ap.video){
 }
 
 // 2. AGENT BOX with "Your Agent" tag
-leftHtml+=`<div class="client-agent-block"><div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Your Agent</div><div class="client-agent-avatar">${avHtml}</div><div class="client-agent-name">${t.agent}</div><div class="client-agent-contact">${ap.phone?`<a href="tel:${ap.phone}" class="contact-link">${ap.phone}</a>`:""}${ap.email?`<a href="mailto:${ap.email}" class="contact-link">${ap.email}</a>`:""}</div></div>`;
+leftHtml+=`<div class="client-agent-block">
+  <div class="client-agent-header">Your Agent</div>
+  <div class="client-agent-body">
+    <div class="client-agent-info">
+      <div class="client-agent-name">${t.agent}</div>
+      <div class="client-agent-contact">
+        ${ap.phone?`<a href="tel:${ap.phone}" class="contact-link">${ap.phone}</a>`:""}
+        ${ap.email?`<a href="mailto:${ap.email}" class="contact-link">${ap.email}</a>`:""}
+      </div>
+    </div>
+    <div class="client-agent-avatar">${avHtml}</div>
+  </div>
+</div>`;
 
 // 3. TITLE COMPANY with map embed
 if(sd.titleName){
