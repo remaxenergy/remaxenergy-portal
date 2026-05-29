@@ -146,6 +146,13 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
 .closing-box-date{font-size:20px;font-weight:600;color:var(--red);}
 .closing-box-time{font-size:13px;color:var(--muted);margin-top:2px;}
 .sidebar-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:6px 9px;font-family:"DM Sans",sans-serif;font-size:12px;background:var(--white);color:var(--dark);margin-top:3px;}
+.sidebar-section.date-past{background:rgba(26,122,74,.06);border-radius:6px;padding:6px 8px;margin:0 -8px 4px -8px;}
+.sidebar-section.date-overdue{background:rgba(170,17,32,.06);border-radius:6px;padding:6px 8px;margin:0 -8px 4px -8px;}
+.sidebar-section.date-soon{background:rgba(180,83,9,.06);border-radius:6px;padding:6px 8px;margin:0 -8px 4px -8px;}
+.date-status-tag{font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:4px;}
+.tag-past{background:var(--success-light);color:var(--success);}
+.tag-overdue{background:var(--danger-light);color:var(--danger);}
+.tag-soon{background:var(--warning-light);color:var(--warning);}
 .sidebar-input:focus{outline:none;border-color:var(--red);}
 .sidebar-input-sm{width:80px;}
 .step-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
@@ -431,6 +438,17 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
           <div class="card-label" style="margin-bottom:8px;">Client source</div>
           <input class="sidebar-input" type="text" id="sb-source" placeholder="e.g. Zillow, referral, open house..." onblur="saveSidebar()" style="margin-top:0;">
         </div>
+        <div class="sidebar-card">
+          <div class="card-label" style="margin-bottom:8px;">Loan type</div>
+          <select class="sidebar-input" id="sb-loan-type" onchange="saveLoanType()" style="appearance:auto;margin-top:0;">
+            <option value="conventional">Conventional</option>
+            <option value="fha">FHA</option>
+            <option value="va">VA</option>
+            <option value="usda">USDA</option>
+            <option value="cash">Cash / No financing</option>
+          </select>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;" id="loan-type-note"></div>
+        </div>
       </div>
 
       <!-- MIDDLE: Client Link + FUB + DotLoop + Progress + Steps + Message -->
@@ -622,6 +640,16 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--dark);min
         <button class="type-btn" onclick="selectType('seller')" id="type-seller">Seller</button>
         <button class="type-btn" onclick="selectType('dual')" id="type-dual">Both sides</button>
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Loan type</label>
+      <select class="form-input" id="new-loan-type" style="appearance:auto;">
+        <option value="conventional">Conventional</option>
+        <option value="fha">FHA</option>
+        <option value="va">VA</option>
+        <option value="usda">USDA</option>
+        <option value="cash">Cash</option>
+      </select>
     </div>
     <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal('modal-new-txn')">Cancel</button><button class="btn btn-primary" onclick="createTransaction()">Create</button></div>
   </div>
@@ -891,6 +919,9 @@ document.getElementById("sb-lender-phone").value=sd.lenderPhone||"";
 document.getElementById("sb-lender-email").value=sd.lenderEmail||"";
 document.getElementById("sb-contingencies").value=sd.contingencies||"";
 document.getElementById("sb-source").value=sd.source||t.source||"";
+const loanTypeEl=document.getElementById("sb-loan-type");
+if(loanTypeEl)loanTypeEl.value=t.loanType||"conventional";
+updateLoanTypeNote(t.loanType||"conventional");
 updateClosingDisplay();
 recalcDates();
 if(!agentProfiles[t.agent]||!agentProfiles[t.agent].pin){try{const pd=await getDoc(doc(db,"agents",t.agent));if(pd.exists())agentProfiles[t.agent]=pd.data();}catch(e){}}
@@ -969,22 +1000,126 @@ window.recalcDates=function(){
     if(el&&!el.value&&val) el.value=val;
   });
 
+  // Color-code sidebar date sections based on date status
+  updateSidebarDateColors();
 };
+
+function updateSidebarDateColors(){
+  // Map of input id -> parent sidebar-section id or selector
+  const dateFields=["sb-earnest","sb-insp-begin","sb-insp-end","sb-trr","sb-trr-neg","sb-hoa","sb-appraisal","sb-closing"];
+  dateFields.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const section=el.closest(".sidebar-section");
+    if(!section)return;
+    const val=el.value;
+    // Remove existing status classes
+    section.classList.remove("date-past","date-overdue","date-soon");
+    // Remove old tag
+    const oldTag=section.querySelector(".date-status-tag");
+    if(oldTag)oldTag.remove();
+    if(!val)return;
+    const diff=daysUntil(val);
+    if(diff===null)return;
+    let tag="";
+    if(diff<0){
+      section.classList.add("date-past");
+      tag=`<span class="date-status-tag tag-past">Done</span>`;
+    } else if(diff===0){
+      section.classList.add("date-soon");
+      tag=`<span class="date-status-tag tag-soon">Today</span>`;
+    } else if(diff<=7){
+      section.classList.add("date-soon");
+      tag=`<span class="date-status-tag tag-soon">${diff}d away</span>`;
+    }
+    if(tag){
+      const label=section.querySelector(".sidebar-label");
+      if(label)label.insertAdjacentHTML("beforeend",tag);
+    }
+  });
+}
 
 window.saveSidebar=async function(){if(!currentTxnId)return;
 updateClosingDisplay();
 const sd={closingTime:document.getElementById("sb-closing-time").value,acceptance:document.getElementById("sb-acceptance").value,trdOverride:document.getElementById("sb-trd").value,trd:document.getElementById("sb-trd").value||document.getElementById("sb-acceptance").value?addCalendarDaysRollToBusinessDay(document.getElementById("sb-acceptance").value,3):"",inspDays:parseInt(document.getElementById("sb-insp-days").value)||10,trrDays:parseInt(document.getElementById("sb-trr-days").value)||7,appraisalDays:parseInt(document.getElementById("sb-appraisal-days").value)||10,earnest:document.getElementById("sb-earnest").value,inspBegin:document.getElementById("sb-insp-begin").value,inspEnd:document.getElementById("sb-insp-end").value,trrDue:document.getElementById("sb-trr").value,trrNegEnd:document.getElementById("sb-trr-neg").value,hoaDue:document.getElementById("sb-hoa").value,appraisalDue:document.getElementById("sb-appraisal").value,titleName:document.getElementById("sb-title-name").value.trim(),titleAddr:document.getElementById("sb-title-addr").value.trim(),titleCity:document.getElementById("sb-title-city").value.trim(),titlePhone:document.getElementById("sb-title-phone").value.trim(),lenderAgent:document.getElementById("sb-lender-agent").value.trim(),lenderCompany:document.getElementById("sb-lender-company").value.trim(),lenderPhone:document.getElementById("sb-lender-phone").value.trim(),lenderEmail:document.getElementById("sb-lender-email").value.trim(),contingencies:document.getElementById("sb-contingencies").value.trim(),source:document.getElementById("sb-source").value.trim()};
 const closing=document.getElementById("sb-closing").value;
-try{await updateDoc(doc(db,"transactions",currentTxnId),{closing,sidebarData:sd});showToast("Saved");}catch(e){showToast("Error saving");}};
+try{await updateDoc(doc(db,"transactions",currentTxnId),{closing,sidebarData:sd});showToast("Saved");updateSidebarDateColors();}catch(e){showToast("Error saving");}};
 
 function renderDetailSteps(t){const all=getSteps(t);const done=all.filter(s=>s.done).length;const pct=all.length?Math.round(done/all.length*100):0;document.getElementById("detail-progress-label").textContent=done+" of "+all.length+" — "+pct+"%";document.getElementById("detail-progress-bar").style.width=pct+"%";const container=document.getElementById("detail-steps");const isAdmin=currentUser&&currentUser.isAdmin;const firstUndone=all.findIndex(s=>!s.done);let html="";if(t.type==="dual"){const buyerFirst=t.buyerSteps?t.buyerSteps.findIndex(s=>!s.done):-1;const sellerFirst=t.sellerSteps?t.sellerSteps.findIndex(s=>!s.done):-1;html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;">Buyer side</div>`;html+=(t.buyerSteps||[]).map((s,i)=>stepHTML(s,i,"buyer",isAdmin,i===buyerFirst)).join("");html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:14px 0 4px;">Seller side</div>`;html+=(t.sellerSteps||[]).map((s,i)=>stepHTML(s,i,"seller",isAdmin,i===sellerFirst)).join("");}else{const key=t.type+"Steps";const stepList=t[key]||[];const firstU=stepList.findIndex(s=>!s.done);html+=stepList.map((s,i)=>stepHTML(s,i,t.type,isAdmin,i===firstU)).join("");}container.innerHTML=html;}
 
-function stepHTML(s,i,side,isAdmin,isCurrent){const cbClass=s.done?"checked":isCurrent?"current":"";const nameClass=s.done?"done":isCurrent?"current":"";const itemClass=isCurrent&&!s.done?"step-current":"";const noteHtml=s.note?`<span class="step-note-text">${s.note}</span>`:(!isAdmin?`<button class="step-add-note" onclick="toggleStepNote('${side}',${i})">+ add note</button>`:"");const inputHtml=!isAdmin?`<input class="step-note-input" id="step-note-input-${side}-${i}" type="text" placeholder="e.g. Due by Friday..." value="${s.note||""}" style="display:none;" onblur="saveStepNote('${side}',${i})" onkeydown="if(event.key==='Enter')saveStepNote('${side}',${i})">`:""
-return`<div class="step-item ${itemClass}"><div class="step-cb ${cbClass}" ${!isAdmin?`onclick="toggleStep('${side}',${i})"`:""}></div><div class="step-body"><div class="step-name ${nameClass}">${s.name}</div><div class="step-meta">${s.done&&s.date?`<span class="step-date-badge">Completed ${s.date}</span>`:""}${noteHtml}</div>${inputHtml}</div></div>`;}
+function stepHTML(s,i,side,isAdmin,isCurrent){
+  const cbClass=s.done?"checked":isCurrent?"current":"";
+  const nameClass=s.done?"done":isCurrent?"current":"";
+  const itemClass=isCurrent&&!s.done?"step-current":"";
+  const safeNote=(s.note||"").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  // Note display: existing note = clickable span to edit; no note = add button
+  const noteHtml=s.note
+    ?(!isAdmin
+      ?`<span class="step-note-text" style="cursor:pointer;" title="Click to edit" onclick="openStepNote('${side}',${i})">${s.note}</span>`
+      :`<span class="step-note-text">${s.note}</span>`)
+    :(!isAdmin?`<button class="step-add-note" onclick="openStepNote('${side}',${i})">+ add note</button>`:"");
+  // Input always rendered, hidden until opened
+  const inputHtml=!isAdmin
+    ?`<div id="step-note-wrap-${side}-${i}" style="display:none;margin-top:4px;display:none;">
+        <input class="step-note-input" id="step-note-input-${side}-${i}" type="text"
+          placeholder="e.g. Scheduled for Thursday 10am, contact info, etc..."
+          value="${safeNote}"
+          onblur="saveStepNote('${side}',${i})"
+          onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){closeStepNote('${side}',${i});}">
+      </div>`
+    :"";
+  return`<div class="step-item ${itemClass}"><div class="step-cb ${cbClass}" ${!isAdmin?`onclick="toggleStep('${side}',${i})"`:""}></div><div class="step-body"><div class="step-name ${nameClass}">${s.name}</div><div class="step-meta">${s.done&&s.date?`<span class="step-date-badge">Completed ${s.date}</span>`:""}${noteHtml}</div>${inputHtml}</div></div>`;
+}
 
-window.toggleStepNote=function(side,i){const input=document.getElementById(`step-note-input-${side}-${i}`);if(!input)return;input.style.display=input.style.display==="none"?"block":"none";if(input.style.display==="block")input.focus();};
-window.saveStepNote=async function(side,i){const input=document.getElementById(`step-note-input-${side}-${i}`);if(!input)return;const t=liveTransactions.find(x=>x.id===currentTxnId);if(!t)return;const key=side+"Steps";const steps=[...(t[key]||[])];steps[i]={...steps[i],note:input.value.trim()};try{await updateDoc(doc(db,"transactions",currentTxnId),{[key]:steps});input.style.display="none";}catch(e){showToast("Error saving note");}};
+window.openStepNote=function(side,i){
+  const wrap=document.getElementById(`step-note-wrap-${side}-${i}`);
+  if(!wrap)return;
+  wrap.style.display="block";
+  const input=document.getElementById(`step-note-input-${side}-${i}`);
+  if(input){input.focus();input.select();}
+};
+window.closeStepNote=function(side,i){
+  const wrap=document.getElementById(`step-note-wrap-${side}-${i}`);
+  if(wrap)wrap.style.display="none";
+};
+
+// toggleStepNote replaced by openStepNote/closeStepNote
+window.saveStepNote=async function(side,i){
+  const input=document.getElementById(`step-note-input-${side}-${i}`);
+  if(!input)return;
+  const t=liveTransactions.find(x=>x.id===currentTxnId);if(!t)return;
+  const key=side+"Steps";
+  const steps=[...(t[key]||[])];
+  steps[i]={...steps[i],note:input.value.trim()};
+  try{
+    await updateDoc(doc(db,"transactions",currentTxnId),{[key]:steps});
+    closeStepNote(side,i);
+  }catch(e){showToast("Error saving note");}
+};
 window.toggleStep=async function(side,i){const t=liveTransactions.find(x=>x.id===currentTxnId);if(!t)return;const key=side+"Steps";const steps=[...(t[key]||[])];steps[i]={...steps[i],done:!steps[i].done,date:!steps[i].done?new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}):""}; try{await updateDoc(doc(db,"transactions",currentTxnId),{[key]:steps});}catch(e){showToast("Error saving");}};
+window.saveLoanType=async function(){
+  const lt=document.getElementById("sb-loan-type").value;
+  try{
+    await updateDoc(doc(db,"transactions",currentTxnId),{loanType:lt});
+    updateLoanTypeNote(lt);
+    showToast("Loan type saved");
+  }catch(e){showToast("Error saving");}
+};
+function updateLoanTypeNote(lt){
+  const el=document.getElementById("loan-type-note");
+  if(!el)return;
+  const notes={
+    conventional:"Standard loan — TRD+5 loan app, TRD+10 conditional approval, TRD+10 appraisal.",
+    fha:"FHA — TRD+5 loan app, TRD+10 conditional approval. Appraisal requirement per FHA supplement.",
+    va:"VA — TRD+5 loan app, TRD+10 conditional approval. VA amendatory clause required.",
+    usda:"USDA Rural — TRD+5 loan app, TRD+10 conditional approval.",
+    cash:"Cash transaction — no financing deadlines apply."
+  };
+  el.textContent=notes[lt]||"";
+  // Hide lender card if cash
+  const lenderCard=document.getElementById("sb-lender-card");
+  if(lenderCard)lenderCard.style.display=lt==="cash"?"none":"block";
+}
 window.saveNote=async function(){const note=document.getElementById("detail-note").value.trim();try{await updateDoc(doc(db,"transactions",currentTxnId),{note});showToast("Message saved");}catch(e){showToast("Error saving");}};
 window.copyLink=function(){navigator.clipboard.writeText(document.getElementById("detail-link").textContent).then(()=>showToast("Link copied")).catch(()=>showToast("Copy failed"));};
 
@@ -1020,7 +1155,8 @@ window.selectType=function(t){newTxnType=t;["buyer","seller","dual"].forEach(x=>
 window.createTransaction=async function(){const client=document.getElementById("new-client").value.trim();const street=document.getElementById("new-address").value.trim();const city=document.getElementById("new-city").value.trim();const state=document.getElementById("new-state").value.trim();const zip=document.getElementById("new-zip").value.trim();const closing=document.getElementById("new-closing").value;const dotloop=document.getElementById("new-dotloop").value.trim();const fub=document.getElementById("new-fub").value.trim();const source=document.getElementById("new-source").value.trim();
 if(!client||!street||!closing){showToast("Please fill in client name, address, and closing date");return;}
 const address=[street,city,state,zip].filter(Boolean).join(", ");
-const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);const txn={client,address,closing,dotloop,fub,source,type:newTxnType,agent:currentUser.name,note:"",sidebarData:{closingTime:document.getElementById("new-closing-time").value},buyerSteps:BUYER_STEPS.map(n=>({name:n,done:false,date:"",note:""})),sellerSteps:SELLER_STEPS.map(n=>({name:n,done:false,date:"",note:""})),created:new Date().toISOString()};
+const loanType=document.getElementById("new-loan-type").value;
+const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);const txn={client,address,closing,dotloop,fub,source,type:newTxnType,loanType,agent:currentUser.name,note:"",sidebarData:{closingTime:document.getElementById("new-closing-time").value},buyerSteps:BUYER_STEPS.map(n=>({name:n,done:false,date:"",note:""})),sellerSteps:SELLER_STEPS.map(n=>({name:n,done:false,date:"",note:""})),created:new Date().toISOString()};
 try{await setDoc(doc(db,"transactions",id),txn);closeModal("modal-new-txn");showToast("Transaction created");}catch(e){showToast("Error creating transaction");}};
 window.closeModal=function(id){document.getElementById(id).classList.remove("open");};
 
